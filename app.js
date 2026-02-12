@@ -8,6 +8,18 @@ const personalities = {
       "В голос блять",
       "Я хочу чтобы Лина звонила мне вечером и говорила что хочет белый дом с голубыми ставнями",
     ],
+    intros: [
+      "Ну смотри, щас разложу нормально.",
+      "Щас по фактам пробегусь.",
+      "Ладно, давай без суеты, по делу.",
+      "Секунду, я уже набросал мысль.",
+    ],
+    outros: [
+      "Если коротко: делай проще и не тупи, всё решаемо.",
+      "Короче, не усложняй, ты вывезешь.",
+      "В общем, схема рабочая, просто доведи до конца.",
+      "Итог простой: спокойно делай шаг за шагом.",
+    ],
     keywords: {
       game: ["игр", "rpg", "дота", "elden", "witcher", "bg3"],
       movie: ["фильм", "супергер", "марвел", "dc", "кино", "комикс"],
@@ -15,8 +27,17 @@ const personalities = {
     },
     generateReply(userText) {
       const text = userText.toLowerCase();
+      const ctx = analyzeUserText(userText);
       const lines = [];
-      lines.push("Слушай, щас распишу по-человечески, не спеши.");
+      lines.push(pickRandom(this.intros));
+
+      if (ctx.isGreeting) {
+        lines.push("Привет, живой вроде, двигаемся.");
+      }
+
+      if (ctx.isHowAreYou) {
+        lines.push("Нормально себя чувствую, на бодром цинизме держусь.");
+      }
 
       if (containsAny(text, this.keywords.game)) {
         lines.push(
@@ -44,7 +65,11 @@ const personalities = {
         lines.push(pickRandom(this.quotes));
       }
 
-      lines.push("Если коротко: делай проще и не тупи, всё решаемо.");
+      if (ctx.isQuestion && !containsAny(text, this.keywords.game) && !containsAny(text, this.keywords.movie)) {
+        lines.push(`По вопросу "${ctx.topic}": рабочий вариант - не усложнять и идти шагами.`);
+      }
+
+      lines.push(pickRandom(this.outros));
       return lines.join(" ");
     },
   },
@@ -63,8 +88,17 @@ const personalities = {
     },
     generateReply(userText) {
       const text = userText.toLowerCase();
+      const ctx = analyzeUserText(userText);
       const lines = [];
       lines.push("Смотри, у меня подход простой: уверенность, кэш и харизма.");
+
+      if (ctx.isGreeting) {
+        lines.push("Приветствую, дорогой. Я в форме.");
+      }
+
+      if (ctx.isHowAreYou) {
+        lines.push("У меня отлично, как у человека с правильными активами.");
+      }
 
       if (containsAny(text, this.keywords.like)) {
         lines.push("Это прям наплюх‑уровень качества, беру в дело.");
@@ -76,6 +110,10 @@ const personalities = {
 
       if (Math.random() < 0.55) {
         lines.push(pickRandom(this.quotes));
+      }
+
+      if (ctx.isQuestion && !containsAny(text, this.keywords.like) && !containsAny(text, this.keywords.sad)) {
+        lines.push(`По теме "${ctx.topic}" - делай выбор, который растит тебя в цене.`);
       }
 
       lines.push("Держи марку. Если нравится - масштабируем. На наплюх?");
@@ -96,8 +134,17 @@ const personalities = {
     },
     generateReply(userText) {
       const text = userText.toLowerCase();
+      const ctx = analyzeUserText(userText);
       const lines = [];
       lines.push("Состояние такое... как будто лузстрик на 12 каток.");
+
+      if (ctx.isGreeting) {
+        lines.push("Да привет... живу на минималках.");
+      }
+
+      if (ctx.isHowAreYou) {
+        lines.push("Чувствую себя как саппорт без вижена. Но терпимо.");
+      }
 
       if (containsAny(text, this.keywords.dota)) {
         lines.push(
@@ -117,6 +164,10 @@ const personalities = {
 
       if (Math.random() < 0.45) {
         lines.push(pickRandom(this.quotes));
+      }
+
+      if (ctx.isQuestion && !containsAny(text, this.keywords.dota)) {
+        lines.push(`По "${ctx.topic}" - сложно, но если не тильтовать, то решаемо.`);
       }
 
       return lines.join(" ");
@@ -195,6 +246,44 @@ function containsAny(text, list) {
 
 function pickRandom(list) {
   return list[Math.floor(Math.random() * list.length)];
+}
+
+function analyzeUserText(userText) {
+  const raw = userText.trim();
+  const lower = raw.toLowerCase();
+  const normalized = lower.replace(/[!?.,:;()[\]{}"]/g, " ");
+
+  const greetingTokens = ["привет", "здор", "хай", "hello", "hey", "добрый"];
+  const howAreYouTokens = ["как дела", "как ты", "как жизнь", "как себя чувствуешь", "как сам"];
+
+  const isGreeting = containsAny(normalized, greetingTokens);
+  const isHowAreYou = containsAny(normalized, howAreYouTokens);
+  const isQuestion = raw.includes("?") || startsWithQuestionWord(normalized);
+
+  return {
+    isGreeting,
+    isHowAreYou,
+    isQuestion,
+    topic: extractTopic(raw),
+  };
+}
+
+function startsWithQuestionWord(text) {
+  const words = text.trim().split(/\s+/);
+  const first = words[0] || "";
+  return ["что", "как", "почему", "зачем", "когда", "где", "кто", "сколько", "which", "what", "how"].includes(first);
+}
+
+function extractTopic(raw) {
+  const cleaned = raw
+    .replace(/[!?.,:;()[\]{}"]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned) return "это";
+
+  const words = cleaned.split(" ").slice(0, 7);
+  return words.join(" ");
 }
 
 init();
