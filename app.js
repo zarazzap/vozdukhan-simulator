@@ -417,7 +417,6 @@ const styleMemory = {
   mat: { intro: null, outro: null },
   glotalkin: { intro: null, outro: null },
 };
-let isWaitingForReply = false;
 const conversationHistory = {
   denchik: [],
   mat: [],
@@ -441,37 +440,28 @@ function init() {
     refreshCharacterInfo();
   });
 
-  chatForm.addEventListener("submit", async (event) => {
+  chatForm.addEventListener("submit", (event) => {
     event.preventDefault();
-
-    if (isWaitingForReply) return;
 
     const text = messageInput.value.trim();
     if (!text) return;
 
-    isWaitingForReply = true;
-    setFormBusy(true);
     appendBubble(text, "user");
     messageInput.value = "";
 
-    try {
-      const person = personalities[currentCharacterKey];
-      const history = conversationHistory[currentCharacterKey];
-      const userMessage = { role: "user", content: text };
-      history.push(userMessage);
+    const person = personalities[currentCharacterKey];
+    const history = conversationHistory[currentCharacterKey];
+    const userMessage = { role: "user", content: text };
+    history.push(userMessage);
 
-      const reply = person.generateReply(text, history.slice(0, -1));
+    const reply = person.generateReply(text, history.slice(0, -1));
 
-      history.push({ role: "assistant", content: reply });
-      trimHistory(history, 16);
+    history.push({ role: "assistant", content: reply });
+    trimHistory(history, 16);
 
-      window.setTimeout(() => {
-        appendBubble(reply, "bot");
-      }, 250);
-    } finally {
-      setFormBusy(false);
-      isWaitingForReply = false;
-    }
+    window.setTimeout(() => {
+      appendBubble(reply, "bot");
+    }, 250);
   });
 }
 
@@ -523,11 +513,6 @@ function pickStyleLine(characterKey, channel, list) {
 function trimHistory(history, maxMessages) {
   if (history.length <= maxMessages) return;
   history.splice(0, history.length - maxMessages);
-}
-
-function setFormBusy(isBusy) {
-  messageInput.disabled = isBusy;
-  chatForm.querySelector("button[type='submit']").disabled = isBusy;
 }
 
 function fillTopic(template, topic) {
