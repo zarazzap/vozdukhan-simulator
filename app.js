@@ -362,12 +362,24 @@ const characterHint = document.querySelector("#characterHint");
 const chatWindow = document.querySelector("#chatWindow");
 const chatForm = document.querySelector("#chatForm");
 const messageInput = document.querySelector("#messageInput");
+const backendUrlInput = document.querySelector("#backendUrlInput");
+const saveBackendBtn = document.querySelector("#saveBackendBtn");
+const backendStatus = document.querySelector("#backendStatus");
 
 let currentCharacterKey = "denchik";
 const styleMemory = {
   denchik: { intro: null, outro: null },
   mat: { intro: null, outro: null },
   glotalkin: { intro: null, outro: null },
+};
+const backendConfigStorageKey = "vozdukhan_backend_url";
+let backendBaseUrl = "";
+let isWaitingForReply = false;
+const conversationHistory = {
+  denchik: [],
+  mat: [],
+  glotalkin: [],
+  igoryan: [],
 };
 
 function init() {
@@ -378,6 +390,17 @@ function init() {
     characterSelect.append(option);
   });
 
+  backendBaseUrl = loadBackendUrl();
+  backendUrlInput.value = backendBaseUrl;
+  syncBackendStatus();
+
+  saveBackendBtn.addEventListener("click", () => {
+    backendBaseUrl = sanitizeBackendUrl(backendUrlInput.value);
+    backendUrlInput.value = backendBaseUrl;
+    saveBackendUrl(backendBaseUrl);
+    syncBackendStatus();
+  });
+
   characterSelect.value = currentCharacterKey;
   refreshCharacterInfo();
 
@@ -386,21 +409,51 @@ function init() {
     refreshCharacterInfo();
   });
 
-  chatForm.addEventListener("submit", (event) => {
+  chatForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+
+    if (isWaitingForReply) return;
 
     const text = messageInput.value.trim();
     if (!text) return;
 
+    isWaitingForReply = true;
+    setFormBusy(true);
     appendBubble(text, "user");
     messageInput.value = "";
 
-    const person = personalities[currentCharacterKey];
-    const reply = person.generateReply(text);
+    try {
+      const person = personalities[currentCharacterKey];
+      const history = conversationHistory[currentCharacterKey];
+      const userMessage = { role: "user", content: text };
+      history.push(userMessage);
 
-    window.setTimeout(() => {
-      appendBubble(reply, "bot");
-    }, 250);
+      let reply = "";
+
+      if (currentCharacterKey === "igoryan") {
+        reply = person.generateReply(text);
+      } else if (backendBaseUrl) {
+        try {
+          reply = await requestLlmReply(currentCharacterKey, text, history.slice(0, -1));
+          syncBackendStatus("Mode: LLM backend connected");
+        } catch (error) {
+          reply = person.generateReply(text);
+          syncBackendStatus(`Mode: fallback to local (${error.message})`, true);
+        }
+      } else {
+        reply = person.generateReply(text);
+      }
+
+      history.push({ role: "assistant", content: reply });
+      trimHistory(history, 16);
+
+      window.setTimeout(() => {
+        appendBubble(reply, "bot");
+      }, 250);
+    } finally {
+      setFormBusy(false);
+      isWaitingForReply = false;
+    }
   });
 }
 
@@ -408,6 +461,7 @@ function refreshCharacterInfo() {
   const person = personalities[currentCharacterKey];
   characterHint.textContent = person.hint;
   chatWindow.innerHTML = "";
+  conversationHistory[currentCharacterKey] = [];
   appendBubble(`${person.name}: ${person.opener}`, "bot");
 }
 
@@ -446,6 +500,81 @@ function pickStyleLine(characterKey, channel, list) {
 
   memory[channel] = candidate;
   return candidate;
+}
+
+function trimHistory(history, maxMessages) {
+  if (history.length <= maxMessages) return;
+  history.splice(0, history.length - maxMessages);
+}
+
+function loadBackendUrl() {
+  return sanitizeBackendUrl(window.localStorage.getItem(backendConfigStorageKey) || "");
+}
+
+function saveBackendUrl(url) {
+  window.localStorage.setItem(backendConfigStorageKey, url);
+}
+
+function sanitizeBackendUrl(url) {
+  const clean = (url || "").trim().replace(/\/+$/, "");
+  return clean;
+}
+
+function syncBackendStatus(statusText = "", isError = false) {
+  if (!backendBaseUrl) {
+    backendStatus.textContent = "Mode: local templates";
+    backendStatus.style.color = "var(--muted)";
+    return;
+  }
+
+  backendStatus.textContent = statusText || `Mode: LLM backend ${backendBaseUrl}`;
+  backendStatus.style.color = isError ? "#a10024" : "var(--muted)";
+}
+
+function setFormBusy(isBusy) {
+  messageInput.disabled = isBusy;
+  chatForm.querySelector("button[type='submit']").disabled = isBusy;
+}
+
+async function requestLlmReply(characterKey, message, history) {
+  const endpoint = `${backendBaseUrl}/chat`;
+  const payload = {
+    character: characterKey,
+    message,
+    history,
+  };
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 25000);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    const reply = (data.reply || "").trim();
+
+    if (!reply) {
+      throw new Error("empty reply");
+    }
+
+    return reply;
+  } catch (error) {
+    if (error.name === "AbortError") {
+      throw new Error("timeout");
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 }
 
 function fillTopic(template, topic) {
