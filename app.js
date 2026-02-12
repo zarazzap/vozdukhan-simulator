@@ -93,12 +93,23 @@ const personalities = {
       "Как там моя ПИАшка милая?",
       "Время осеменять!",
     ],
+    intros: [
+      "Щас скажу по-взрослому и без лишней скромности.",
+      "Слушай внимательно, у меня на это есть схема.",
+      "По этой теме действуем хладнокровно и с профитом.",
+      "Смотри, тут важно не суетиться.",
+    ],
+    outros: [
+      "Идем спокойно, с уверенностью. На наплюх?",
+      "Выбирай то, что усиливает позицию. На наплюх?",
+      "Суть простая: меньше паники, больше точных решений.",
+      "Держи темп и не просаживай уверенность.",
+    ],
     keywords: {
       like: ["нрав", "круто", "топ", "норм", "кайф"],
       sad: ["груст", "бывш", "разрыв", "печаль", "одиноко"],
     },
     generateReply(userText) {
-      const text = userText.toLowerCase();
       const ctx = analyzeUserText(userText);
       const lines = [];
       const pureSmallTalk =
@@ -114,7 +125,7 @@ const personalities = {
         return "Ну шо ты, рад видеть. Что обсуждаем?";
       }
 
-      lines.push("Смотри, у меня подход простой: уверенность, кэш и харизма.");
+      lines.push(pickStyleLine("mat", "intro", this.intros));
 
       if (ctx.isGreeting && ctx.wordCount > 3) {
         lines.push("Приветствую, дорогой. Я в форме.");
@@ -141,7 +152,7 @@ const personalities = {
       }
 
       if (!ctx.isHowAreYou || ctx.wordCount > 5) {
-        lines.push("Держи марку. Если нравится - масштабируем. На наплюх?");
+        lines.push(pickStyleLine("mat", "outro", this.outros));
       }
       return lines.join(" ");
     },
@@ -154,12 +165,23 @@ const personalities = {
       "Ща мне в Семифреддо надо отскочить",
       "Бляяя, какую же шахматную партию я разыграл!",
     ],
+    intros: [
+      "Ладно, попробую собрать мысли в одно место.",
+      "Сейчас скажу, пока окончательно не растекся по креслу.",
+      "Окей, тема не простая, но разберем.",
+      "Щас накину как вижу, без прикрас.",
+    ],
+    outros: [
+      "Короче, не тильтуй и делай шагами.",
+      "Если спокойно подойти, это решаемо.",
+      "Сумбурно, но рабочая мысль в этом есть.",
+      "Ладно, как-то так. Дальше по ходу катки.",
+    ],
     keywords: {
       dota: ["дота", "мид", "саппорт", "ммр", "герой", "катка"],
       sonya: ["соня"],
     },
     generateReply(userText) {
-      const text = userText.toLowerCase();
       const ctx = analyzeUserText(userText);
       const lines = [];
       const pureSmallTalk =
@@ -175,7 +197,7 @@ const personalities = {
         return "Привет... живу потихоньку. Что хотел?";
       }
 
-      lines.push("Состояние такое... как будто лузстрик на 12 каток.");
+      lines.push(pickStyleLine("glotalkin", "intro", this.intros));
 
       if (ctx.isGreeting && ctx.wordCount > 3) {
         lines.push("Да привет... живу на минималках.");
@@ -209,6 +231,10 @@ const personalities = {
         lines.push(`По "${ctx.topic}" - сложно, но если не тильтовать, то решаемо.`);
       }
 
+      if (!ctx.isHowAreYou || ctx.wordCount > 5) {
+        lines.push(pickStyleLine("glotalkin", "outro", this.outros));
+      }
+
       return lines.join(" ");
     },
   },
@@ -229,6 +255,11 @@ const chatForm = document.querySelector("#chatForm");
 const messageInput = document.querySelector("#messageInput");
 
 let currentCharacterKey = "denchik";
+const styleMemory = {
+  denchik: { intro: null, outro: null },
+  mat: { intro: null, outro: null },
+  glotalkin: { intro: null, outro: null },
+};
 
 function init() {
   Object.entries(personalities).forEach(([key, data]) => {
@@ -285,6 +316,27 @@ function containsAny(text, list) {
 
 function pickRandom(list) {
   return list[Math.floor(Math.random() * list.length)];
+}
+
+function pickStyleLine(characterKey, channel, list) {
+  if (!list || list.length === 0) return "";
+  const memory = styleMemory[characterKey] || (styleMemory[characterKey] = {});
+  const prev = memory[channel];
+
+  if (list.length === 1) {
+    memory[channel] = list[0];
+    return list[0];
+  }
+
+  let candidate = pickRandom(list);
+  let guard = 0;
+  while (candidate === prev && guard < 8) {
+    candidate = pickRandom(list);
+    guard += 1;
+  }
+
+  memory[channel] = candidate;
+  return candidate;
 }
 
 function analyzeUserText(userText) {
