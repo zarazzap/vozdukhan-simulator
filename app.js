@@ -101,9 +101,22 @@ const personalities = {
       const text = userText.toLowerCase();
       const ctx = analyzeUserText(userText);
       const lines = [];
+      const pureSmallTalk =
+        (ctx.isGreeting || ctx.isHowAreYou) &&
+        !ctx.hasLike &&
+        !ctx.hasSad &&
+        ctx.wordCount <= 5;
+
+      if (pureSmallTalk) {
+        if (ctx.isHowAreYou) {
+          return "У меня всё отлично. Как там твои дела, на наплюх?";
+        }
+        return "Ну шо ты, рад видеть. Что обсуждаем?";
+      }
+
       lines.push("Смотри, у меня подход простой: уверенность, кэш и харизма.");
 
-      if (ctx.isGreeting) {
+      if (ctx.isGreeting && ctx.wordCount > 3) {
         lines.push("Приветствую, дорогой. Я в форме.");
       }
 
@@ -111,23 +124,25 @@ const personalities = {
         lines.push("У меня отлично, как у человека с правильными активами.");
       }
 
-      if (containsAny(text, this.keywords.like)) {
+      if (ctx.hasLike) {
         lines.push("Это прям наплюх‑уровень качества, беру в дело.");
       }
 
-      if (containsAny(text, this.keywords.sad)) {
+      if (ctx.hasSad) {
         lines.push("Бывшая - это волатильный актив, не вкладывай туда душу повторно.");
       }
 
-      if (Math.random() < 0.55) {
+      if (Math.random() < 0.3 && !ctx.isHowAreYou) {
         lines.push(pickRandom(this.quotes));
       }
 
-      if (ctx.isQuestion && !containsAny(text, this.keywords.like) && !containsAny(text, this.keywords.sad)) {
+      if (ctx.isQuestion && !ctx.hasLike && !ctx.hasSad) {
         lines.push(`По теме "${ctx.topic}" - делай выбор, который растит тебя в цене.`);
       }
 
-      lines.push("Держи марку. Если нравится - масштабируем. На наплюх?");
+      if (!ctx.isHowAreYou || ctx.wordCount > 5) {
+        lines.push("Держи марку. Если нравится - масштабируем. На наплюх?");
+      }
       return lines.join(" ");
     },
   },
@@ -147,9 +162,22 @@ const personalities = {
       const text = userText.toLowerCase();
       const ctx = analyzeUserText(userText);
       const lines = [];
+      const pureSmallTalk =
+        (ctx.isGreeting || ctx.isHowAreYou) &&
+        !ctx.hasDota &&
+        !ctx.hasSonya &&
+        ctx.wordCount <= 5;
+
+      if (pureSmallTalk) {
+        if (ctx.isHowAreYou) {
+          return "Да так... терпимо. Не в тильте, уже хорошо.";
+        }
+        return "Привет... живу потихоньку. Что хотел?";
+      }
+
       lines.push("Состояние такое... как будто лузстрик на 12 каток.");
 
-      if (ctx.isGreeting) {
+      if (ctx.isGreeting && ctx.wordCount > 3) {
         lines.push("Да привет... живу на минималках.");
       }
 
@@ -157,7 +185,7 @@ const personalities = {
         lines.push("Чувствую себя как саппорт без вижена. Но терпимо.");
       }
 
-      if (containsAny(text, this.keywords.dota)) {
+      if (ctx.hasDota) {
         lines.push(
           "В доте всё просто: ты либо жмешь кнопки вовремя, либо смотришь на трон."
         );
@@ -165,19 +193,19 @@ const personalities = {
         lines.push("Я бы сейчас лучше патчноуты почитал, чем в реальность возвращался.");
       }
 
-      if (containsAny(text, this.keywords.sonya)) {
+      if (ctx.hasSonya) {
         lines.push("Соня? Не, не понимаю о чем ты вообще говоришь.");
       }
 
-      if (Math.random() < 0.45) {
+      if (Math.random() < 0.25 && !ctx.isHowAreYou) {
         lines.push("Ща мне в Семифреддо надо отскочить.");
       }
 
-      if (Math.random() < 0.45) {
+      if (Math.random() < 0.25 && !ctx.isHowAreYou) {
         lines.push(pickRandom(this.quotes));
       }
 
-      if (ctx.isQuestion && !containsAny(text, this.keywords.dota)) {
+      if (ctx.isQuestion && !ctx.hasDota) {
         lines.push(`По "${ctx.topic}" - сложно, но если не тильтовать, то решаемо.`);
       }
 
@@ -273,6 +301,10 @@ function analyzeUserText(userText) {
   const hasGame = containsAny(normalized, ["игр", "rpg", "дота", "elden", "witcher", "bg3"]);
   const hasMovie = containsAny(normalized, ["фильм", "супергер", "марвел", "dc", "кино", "комикс"]);
   const hasLina = containsAny(normalized, ["лина"]);
+  const hasLike = containsAny(normalized, ["нрав", "круто", "топ", "норм", "кайф", "класс"]);
+  const hasSad = containsAny(normalized, ["груст", "бывш", "разрыв", "печаль", "одиноко"]);
+  const hasDota = containsAny(normalized, ["дота", "мид", "саппорт", "ммр", "герой", "катка"]);
+  const hasSonya = containsAny(normalized, ["соня"]);
 
   return {
     isGreeting,
@@ -281,6 +313,10 @@ function analyzeUserText(userText) {
     hasGame,
     hasMovie,
     hasLina,
+    hasLike,
+    hasSad,
+    hasDota,
+    hasSonya,
     wordCount: normalized.trim().split(/\s+/).filter(Boolean).length,
     topic: extractTopic(raw),
   };
