@@ -53,6 +53,11 @@ const personalities = {
       'Если по теме "{topic}", то делай просто: выбрал и последовательно добил.',
       'На "{topic}" ответ такой: меньше хаоса, больше конкретных действий.',
     ],
+    repeatReplies: [
+      "Это мы уже трогали, брат. Ответ тот же, просто другим углом.",
+      "Ты повторяешься, но ладно: суть не меняется.",
+      "Мы уже это обсуждали, но могу добить подробнее.",
+    ],
     outros: [
       "Если коротко: делай проще и не тупи, всё решаемо.",
       "Короче, не усложняй, ты вывезешь.",
@@ -64,8 +69,9 @@ const personalities = {
       movie: ["фильм", "супергер", "марвел", "dc", "кино", "комикс"],
       lina: ["лина"],
     },
-    generateReply(userText) {
+    generateReply(userText, history = []) {
       const ctx = analyzeUserText(userText);
+      const convo = analyzeConversation(ctx, history);
       const lines = [];
       const pureSmallTalk =
         (ctx.isGreeting || ctx.isHowAreYou) &&
@@ -82,6 +88,10 @@ const personalities = {
       }
 
       lines.push(pickStyleLine("denchik", "intro", this.intros));
+
+      if (convo.isRepeatQuestion) {
+        lines.push(pickStyleLine("denchik", "repeat", this.repeatReplies));
+      }
 
       if (ctx.isHowAreYou) {
         lines.push(pickStyleLine("denchik", "how", this.howAreYouReplies));
@@ -112,6 +122,10 @@ const personalities = {
             ctx.topic
           )
         );
+      }
+
+      if (convo.previousUserTopic && !ctx.hasGame && !ctx.hasMovie && Math.random() < 0.25) {
+        lines.push(`И да, по прошлой теме "${convo.previousUserTopic}" я мнение не поменял.`);
       }
 
       if (!ctx.isHowAreYou || ctx.wordCount > 4) {
@@ -165,6 +179,11 @@ const personalities = {
       'Если вопрос про "{topic}", то нужен расчет и хладнокровие.',
       'На "{topic}" мой ответ простой: выбирай вариант с долгим профитом.',
     ],
+    repeatReplies: [
+      "Мы это уже обсуждали. План прежний, стратегия та же.",
+      "Вопрос повторный, но окей: курс не меняется.",
+      "Снова к этой теме? Значит, закрепляем решение.",
+    ],
     outros: [
       "Идем спокойно, с уверенностью. На наплюх?",
       "Выбирай то, что усиливает позицию. На наплюх?",
@@ -175,8 +194,9 @@ const personalities = {
       like: ["нрав", "круто", "топ", "норм", "кайф"],
       sad: ["груст", "бывш", "разрыв", "печаль", "одиноко"],
     },
-    generateReply(userText) {
+    generateReply(userText, history = []) {
       const ctx = analyzeUserText(userText);
+      const convo = analyzeConversation(ctx, history);
       const lines = [];
       const pureSmallTalk =
         (ctx.isGreeting || ctx.isHowAreYou) &&
@@ -192,6 +212,10 @@ const personalities = {
       }
 
       lines.push(pickStyleLine("mat", "intro", this.intros));
+
+      if (convo.isRepeatQuestion) {
+        lines.push(pickStyleLine("mat", "repeat", this.repeatReplies));
+      }
 
       if (ctx.isGreeting && ctx.wordCount > 3) {
         lines.push(pickStyleLine("mat", "greet", this.smallTalkGreeting));
@@ -220,6 +244,10 @@ const personalities = {
             ctx.topic
           )
         );
+      }
+
+      if (convo.previousUserTopic && !ctx.hasLike && !ctx.hasSad && Math.random() < 0.22) {
+        lines.push(`По прошлой теме "${convo.previousUserTopic}" всё ещё держим тот же курс.`);
       }
 
       if (!ctx.isHowAreYou || ctx.wordCount > 5) {
@@ -277,6 +305,11 @@ const personalities = {
       'Если про "{topic}", то не спеши: шаг, пауза, потом второй шаг.',
       'На тему "{topic}" скажу так: спокойный темп побеждает хаос.',
     ],
+    repeatReplies: [
+      "Мы уже это поднимали... ответ примерно тот же.",
+      "Снова эта тема? Ладно, коротко повторю.",
+      "Это уже было в чате, но давай ещё раз без тильта.",
+    ],
     outros: [
       "Короче, не тильтуй и делай шагами.",
       "Если спокойно подойти, это решаемо.",
@@ -287,8 +320,9 @@ const personalities = {
       dota: ["дота", "мид", "саппорт", "ммр", "герой", "катка"],
       sonya: ["соня"],
     },
-    generateReply(userText) {
+    generateReply(userText, history = []) {
       const ctx = analyzeUserText(userText);
+      const convo = analyzeConversation(ctx, history);
       const lines = [];
       const pureSmallTalk =
         (ctx.isGreeting || ctx.isHowAreYou) &&
@@ -304,6 +338,10 @@ const personalities = {
       }
 
       lines.push(pickStyleLine("glotalkin", "intro", this.intros));
+
+      if (convo.isRepeatQuestion) {
+        lines.push(pickStyleLine("glotalkin", "repeat", this.repeatReplies));
+      }
 
       if (ctx.isGreeting && ctx.wordCount > 3) {
         lines.push(pickStyleLine("glotalkin", "greet", this.smallTalkGreeting));
@@ -340,6 +378,10 @@ const personalities = {
         );
       }
 
+      if (convo.previousUserTopic && !ctx.hasDota && Math.random() < 0.25) {
+        lines.push(`Про "${convo.previousUserTopic}" я всё ещё думаю так же.`);
+      }
+
       if (!ctx.isHowAreYou || ctx.wordCount > 5) {
         lines.push(pickStyleLine("glotalkin", "outro", this.outros));
       }
@@ -362,9 +404,6 @@ const characterHint = document.querySelector("#characterHint");
 const chatWindow = document.querySelector("#chatWindow");
 const chatForm = document.querySelector("#chatForm");
 const messageInput = document.querySelector("#messageInput");
-const backendUrlInput = document.querySelector("#backendUrlInput");
-const saveBackendBtn = document.querySelector("#saveBackendBtn");
-const backendStatus = document.querySelector("#backendStatus");
 
 let currentCharacterKey = "denchik";
 const styleMemory = {
@@ -372,8 +411,6 @@ const styleMemory = {
   mat: { intro: null, outro: null },
   glotalkin: { intro: null, outro: null },
 };
-const backendConfigStorageKey = "vozdukhan_backend_url";
-let backendBaseUrl = "";
 let isWaitingForReply = false;
 const conversationHistory = {
   denchik: [],
@@ -388,17 +425,6 @@ function init() {
     option.value = key;
     option.textContent = data.name;
     characterSelect.append(option);
-  });
-
-  backendBaseUrl = loadBackendUrl();
-  backendUrlInput.value = backendBaseUrl;
-  syncBackendStatus();
-
-  saveBackendBtn.addEventListener("click", () => {
-    backendBaseUrl = sanitizeBackendUrl(backendUrlInput.value);
-    backendUrlInput.value = backendBaseUrl;
-    saveBackendUrl(backendBaseUrl);
-    syncBackendStatus();
   });
 
   characterSelect.value = currentCharacterKey;
@@ -428,21 +454,7 @@ function init() {
       const userMessage = { role: "user", content: text };
       history.push(userMessage);
 
-      let reply = "";
-
-      if (currentCharacterKey === "igoryan") {
-        reply = person.generateReply(text);
-      } else if (backendBaseUrl) {
-        try {
-          reply = await requestLlmReply(currentCharacterKey, text, history.slice(0, -1));
-          syncBackendStatus("Mode: LLM backend connected");
-        } catch (error) {
-          reply = person.generateReply(text);
-          syncBackendStatus(`Mode: fallback to local (${error.message})`, true);
-        }
-      } else {
-        reply = person.generateReply(text);
-      }
+      const reply = person.generateReply(text, history.slice(0, -1));
 
       history.push({ role: "assistant", content: reply });
       trimHistory(history, 16);
@@ -507,74 +519,9 @@ function trimHistory(history, maxMessages) {
   history.splice(0, history.length - maxMessages);
 }
 
-function loadBackendUrl() {
-  return sanitizeBackendUrl(window.localStorage.getItem(backendConfigStorageKey) || "");
-}
-
-function saveBackendUrl(url) {
-  window.localStorage.setItem(backendConfigStorageKey, url);
-}
-
-function sanitizeBackendUrl(url) {
-  const clean = (url || "").trim().replace(/\/+$/, "");
-  return clean;
-}
-
-function syncBackendStatus(statusText = "", isError = false) {
-  if (!backendBaseUrl) {
-    backendStatus.textContent = "Mode: local templates";
-    backendStatus.style.color = "var(--muted)";
-    return;
-  }
-
-  backendStatus.textContent = statusText || `Mode: LLM backend ${backendBaseUrl}`;
-  backendStatus.style.color = isError ? "#a10024" : "var(--muted)";
-}
-
 function setFormBusy(isBusy) {
   messageInput.disabled = isBusy;
   chatForm.querySelector("button[type='submit']").disabled = isBusy;
-}
-
-async function requestLlmReply(characterKey, message, history) {
-  const endpoint = `${backendBaseUrl}/chat`;
-  const payload = {
-    character: characterKey,
-    message,
-    history,
-  };
-
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), 25000);
-
-  try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-    const reply = (data.reply || "").trim();
-
-    if (!reply) {
-      throw new Error("empty reply");
-    }
-
-    return reply;
-  } catch (error) {
-    if (error.name === "AbortError") {
-      throw new Error("timeout");
-    }
-    throw error;
-  } finally {
-    window.clearTimeout(timeoutId);
-  }
 }
 
 function fillTopic(template, topic) {
@@ -613,6 +560,25 @@ function analyzeUserText(userText) {
     hasSonya,
     wordCount: normalized.trim().split(/\s+/).filter(Boolean).length,
     topic: extractTopic(raw),
+  };
+}
+
+function analyzeConversation(currentCtx, history) {
+  const userMessages = (history || [])
+    .filter((item) => item && item.role === "user" && typeof item.content === "string")
+    .map((item) => item.content.trim())
+    .filter(Boolean);
+
+  const previousUser = userMessages[userMessages.length - 1] || "";
+  const previousCtx = previousUser ? analyzeUserText(previousUser) : null;
+  const sameTopic = previousCtx ? previousCtx.topic.toLowerCase() === currentCtx.topic.toLowerCase() : false;
+  const closeMatch = previousUser
+    ? previousUser.toLowerCase().replace(/\s+/g, " ").trim() === currentCtx.topic.toLowerCase().replace(/\s+/g, " ").trim()
+    : false;
+
+  return {
+    isRepeatQuestion: Boolean(currentCtx.isQuestion && previousUser && (sameTopic || closeMatch)),
+    previousUserTopic: previousCtx ? previousCtx.topic : "",
   };
 }
 
