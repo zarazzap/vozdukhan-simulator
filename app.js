@@ -26,50 +26,61 @@ const personalities = {
       lina: ["лина"],
     },
     generateReply(userText) {
-      const text = userText.toLowerCase();
       const ctx = analyzeUserText(userText);
       const lines = [];
-      lines.push(pickRandom(this.intros));
+      const pureSmallTalk =
+        (ctx.isGreeting || ctx.isHowAreYou) &&
+        !ctx.hasGame &&
+        !ctx.hasMovie &&
+        !ctx.hasLina &&
+        ctx.wordCount <= 4;
 
-      if (ctx.isGreeting) {
-        lines.push("Привет, живой вроде, двигаемся.");
+      if (pureSmallTalk) {
+        if (ctx.isHowAreYou) {
+          return "Нормально, держусь бодро. Ты как сам?";
+        }
+        return "Йо, привет. Че по планам?";
       }
+
+      lines.push(pickRandom(this.intros));
 
       if (ctx.isHowAreYou) {
         lines.push("Нормально себя чувствую, на бодром цинизме держусь.");
       }
 
-      if (containsAny(text, this.keywords.game)) {
+      if (ctx.hasGame) {
         lines.push(
           "По играм я базу даю: качай билд, не ной и получай удовольствие от процесса."
         );
       }
 
-      if (containsAny(text, this.keywords.movie)) {
+      if (ctx.hasMovie) {
         lines.push(
           "Если про супергероев, то нужен нормальный драматизм, а не просто костюм и взрывы."
         );
       }
 
-      if (containsAny(text, this.keywords.lina)) {
+      if (ctx.hasLina) {
         lines.push(
           "Лина вообще отдельная тема, я про нее могу бесконечно говорить, ты не представляешь."
         );
-      } else if (Math.random() < 0.35) {
+      } else if (Math.random() < 0.18 && ctx.wordCount > 5) {
         lines.push(
           "Кстати, Лина бы тут сказала, что ты мыслишь здраво. Ну почти."
         );
       }
 
-      if (Math.random() < 0.5) {
+      if (Math.random() < 0.35 && !ctx.isHowAreYou) {
         lines.push(pickRandom(this.quotes));
       }
 
-      if (ctx.isQuestion && !containsAny(text, this.keywords.game) && !containsAny(text, this.keywords.movie)) {
+      if (ctx.isQuestion && !ctx.hasGame && !ctx.hasMovie) {
         lines.push(`По вопросу "${ctx.topic}": рабочий вариант - не усложнять и идти шагами.`);
       }
 
-      lines.push(pickRandom(this.outros));
+      if (!ctx.isHowAreYou || ctx.wordCount > 4) {
+        lines.push(pickRandom(this.outros));
+      }
       return lines.join(" ");
     },
   },
@@ -259,11 +270,18 @@ function analyzeUserText(userText) {
   const isGreeting = containsAny(normalized, greetingTokens);
   const isHowAreYou = containsAny(normalized, howAreYouTokens);
   const isQuestion = raw.includes("?") || startsWithQuestionWord(normalized);
+  const hasGame = containsAny(normalized, ["игр", "rpg", "дота", "elden", "witcher", "bg3"]);
+  const hasMovie = containsAny(normalized, ["фильм", "супергер", "марвел", "dc", "кино", "комикс"]);
+  const hasLina = containsAny(normalized, ["лина"]);
 
   return {
     isGreeting,
     isHowAreYou,
     isQuestion,
+    hasGame,
+    hasMovie,
+    hasLina,
+    wordCount: normalized.trim().split(/\s+/).filter(Boolean).length,
     topic: extractTopic(raw),
   };
 }
