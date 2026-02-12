@@ -14,6 +14,45 @@ const personalities = {
       "Ладно, давай без суеты, по делу.",
       "Секунду, я уже набросал мысль.",
     ],
+    smallTalkGreeting: [
+      "Йо, привет. Че по планам?",
+      "Здарова. Ну че, сегодня разгоняем тему?",
+      "О, привет, живой. Что обсудим?",
+    ],
+    smallTalkHowAreYou: [
+      "Нормально, держусь бодро. Ты как сам?",
+      "Пойдет, на сарказме выезжаю. Ты как?",
+      "Да нормально, не развалился. Что у тебя?",
+    ],
+    howAreYouReplies: [
+      "Нормально себя чувствую, на бодром цинизме держусь.",
+      "Да в порядке, просто мозг в турбо-режиме.",
+      "Живу нормально, местами в ахуе, но стабильно.",
+    ],
+    gameReplies: [
+      "По играм я базу даю: качай билд, не ной и получай удовольствие от процесса.",
+      "Если по RPG, то сначала стиль игры, потом шмот и ротация.",
+      "В играх главное не тильтовать: один нормальный план лучше десяти панических.",
+    ],
+    movieReplies: [
+      "Если про супергероев, то нужен нормальный драматизм, а не просто костюм и взрывы.",
+      "Комикс-кино работает, когда герой ошибается, а не только красиво прыгает.",
+      "Если фильм держится только на CGI, то это не геройка, а ярмарка спецэффектов.",
+    ],
+    linaReplies: [
+      "Лина вообще отдельная тема, я про нее могу бесконечно говорить, ты не представляешь.",
+      "Лина - это сюжетная арка уровня легендарки, без шансов на скип.",
+      "Если честно, с Линой любой разговор становится лучше автоматически.",
+    ],
+    linaRandomReplies: [
+      "Кстати, Лина бы тут сказала, что ты мыслишь здраво. Ну почти.",
+      "Лина бы оценила этот ход, без рофлов.",
+    ],
+    generalQuestionReplies: [
+      'По вопросу "{topic}": рабочий вариант - не усложнять и идти шагами.',
+      'Если по теме "{topic}", то делай просто: выбрал и последовательно добил.',
+      'На "{topic}" ответ такой: меньше хаоса, больше конкретных действий.',
+    ],
     outros: [
       "Если коротко: делай проще и не тупи, всё решаемо.",
       "Короче, не усложняй, ты вывезешь.",
@@ -37,37 +76,29 @@ const personalities = {
 
       if (pureSmallTalk) {
         if (ctx.isHowAreYou) {
-          return "Нормально, держусь бодро. Ты как сам?";
+          return pickStyleLine("denchik", "small_how", this.smallTalkHowAreYou);
         }
-        return "Йо, привет. Че по планам?";
+        return pickStyleLine("denchik", "small_greet", this.smallTalkGreeting);
       }
 
-      lines.push(pickRandom(this.intros));
+      lines.push(pickStyleLine("denchik", "intro", this.intros));
 
       if (ctx.isHowAreYou) {
-        lines.push("Нормально себя чувствую, на бодром цинизме держусь.");
+        lines.push(pickStyleLine("denchik", "how", this.howAreYouReplies));
       }
 
       if (ctx.hasGame) {
-        lines.push(
-          "По играм я базу даю: качай билд, не ной и получай удовольствие от процесса."
-        );
+        lines.push(pickStyleLine("denchik", "game", this.gameReplies));
       }
 
       if (ctx.hasMovie) {
-        lines.push(
-          "Если про супергероев, то нужен нормальный драматизм, а не просто костюм и взрывы."
-        );
+        lines.push(pickStyleLine("denchik", "movie", this.movieReplies));
       }
 
       if (ctx.hasLina) {
-        lines.push(
-          "Лина вообще отдельная тема, я про нее могу бесконечно говорить, ты не представляешь."
-        );
+        lines.push(pickStyleLine("denchik", "lina", this.linaReplies));
       } else if (Math.random() < 0.18 && ctx.wordCount > 5) {
-        lines.push(
-          "Кстати, Лина бы тут сказала, что ты мыслишь здраво. Ну почти."
-        );
+        lines.push(pickStyleLine("denchik", "lina_random", this.linaRandomReplies));
       }
 
       if (Math.random() < 0.35 && !ctx.isHowAreYou) {
@@ -75,11 +106,16 @@ const personalities = {
       }
 
       if (ctx.isQuestion && !ctx.hasGame && !ctx.hasMovie) {
-        lines.push(`По вопросу "${ctx.topic}": рабочий вариант - не усложнять и идти шагами.`);
+        lines.push(
+          fillTopic(
+            pickStyleLine("denchik", "question", this.generalQuestionReplies),
+            ctx.topic
+          )
+        );
       }
 
       if (!ctx.isHowAreYou || ctx.wordCount > 4) {
-        lines.push(pickRandom(this.outros));
+        lines.push(pickStyleLine("denchik", "outro", this.outros));
       }
       return lines.join(" ");
     },
@@ -98,6 +134,36 @@ const personalities = {
       "Слушай внимательно, у меня на это есть схема.",
       "По этой теме действуем хладнокровно и с профитом.",
       "Смотри, тут важно не суетиться.",
+    ],
+    smallTalkGreeting: [
+      "Ну шо ты, рад видеть. Что обсуждаем?",
+      "О, приветствую. Давай сразу к сути.",
+      "Ну шо ты, дорогой. О чем сегодня рынок мнений?",
+    ],
+    smallTalkHowAreYou: [
+      "У меня всё отлично. Как там твои дела, на наплюх?",
+      "Я в полном порядке, как всегда. А ты как?",
+      "Шикарно себя чувствую. У тебя как динамика?",
+    ],
+    howAreYouReplies: [
+      "У меня отлично, как у человека с правильными активами.",
+      "Форма топовая, фокус четкий, идем уверенно.",
+      "Все стабильно хорошо, без просадки по настроению.",
+    ],
+    likeReplies: [
+      "Это прям наплюх‑уровень качества, беру в дело.",
+      "Вот это хороший вкус, одобряю полностью.",
+      "Это звучит сильно, такое я поддерживаю.",
+    ],
+    sadReplies: [
+      "Бывшая - это волатильный актив, не вкладывай туда душу повторно.",
+      "Если грустно, значит пора в стратегию, а не в ностальгию.",
+      "Эмоции понял, но держи осанку и двигайся дальше.",
+    ],
+    generalQuestionReplies: [
+      'По теме "{topic}" - делай выбор, который растит тебя в цене.',
+      'Если вопрос про "{topic}", то нужен расчет и хладнокровие.',
+      'На "{topic}" мой ответ простой: выбирай вариант с долгим профитом.',
     ],
     outros: [
       "Идем спокойно, с уверенностью. На наплюх?",
@@ -120,27 +186,27 @@ const personalities = {
 
       if (pureSmallTalk) {
         if (ctx.isHowAreYou) {
-          return "У меня всё отлично. Как там твои дела, на наплюх?";
+          return pickStyleLine("mat", "small_how", this.smallTalkHowAreYou);
         }
-        return "Ну шо ты, рад видеть. Что обсуждаем?";
+        return pickStyleLine("mat", "small_greet", this.smallTalkGreeting);
       }
 
       lines.push(pickStyleLine("mat", "intro", this.intros));
 
       if (ctx.isGreeting && ctx.wordCount > 3) {
-        lines.push("Приветствую, дорогой. Я в форме.");
+        lines.push(pickStyleLine("mat", "greet", this.smallTalkGreeting));
       }
 
       if (ctx.isHowAreYou) {
-        lines.push("У меня отлично, как у человека с правильными активами.");
+        lines.push(pickStyleLine("mat", "how", this.howAreYouReplies));
       }
 
       if (ctx.hasLike) {
-        lines.push("Это прям наплюх‑уровень качества, беру в дело.");
+        lines.push(pickStyleLine("mat", "like", this.likeReplies));
       }
 
       if (ctx.hasSad) {
-        lines.push("Бывшая - это волатильный актив, не вкладывай туда душу повторно.");
+        lines.push(pickStyleLine("mat", "sad", this.sadReplies));
       }
 
       if (Math.random() < 0.3 && !ctx.isHowAreYou) {
@@ -148,7 +214,12 @@ const personalities = {
       }
 
       if (ctx.isQuestion && !ctx.hasLike && !ctx.hasSad) {
-        lines.push(`По теме "${ctx.topic}" - делай выбор, который растит тебя в цене.`);
+        lines.push(
+          fillTopic(
+            pickStyleLine("mat", "question", this.generalQuestionReplies),
+            ctx.topic
+          )
+        );
       }
 
       if (!ctx.isHowAreYou || ctx.wordCount > 5) {
@@ -171,6 +242,41 @@ const personalities = {
       "Окей, тема не простая, но разберем.",
       "Щас накину как вижу, без прикрас.",
     ],
+    smallTalkGreeting: [
+      "Привет... живу потихоньку. Что хотел?",
+      "Да привет. Че обсудим, пока не развалился?",
+      "О, здаров. Ладно, говори, слушаю.",
+    ],
+    smallTalkHowAreYou: [
+      "Да так... терпимо. Не в тильте, уже хорошо.",
+      "Пойдет, настроение как у саппорта на лузстрике.",
+      "Жив, уже плюс. Как у тебя обстановка?",
+    ],
+    howAreYouReplies: [
+      "Чувствую себя как саппорт без вижена. Но терпимо.",
+      "Состояние среднее, но кнопки еще нажимаются.",
+      "Не идеально, но в фид пока не ухожу.",
+    ],
+    dotaReplies: [
+      "В доте всё просто: ты либо жмешь кнопки вовремя, либо смотришь на трон.",
+      "По доте рецепт один: не тильтуй, играй от таймингов.",
+      "В катке главное темп и дисциплина, без этого минус трон.",
+    ],
+    nonDotaReplies: [
+      "Я бы сейчас лучше патчноуты почитал, чем в реальность возвращался.",
+      "Тяжелая тема, но если не паниковать, то вывезти можно.",
+      "Сложно, но решаемо, если идти короткими шагами.",
+    ],
+    sonyaReplies: [
+      "Соня? Не, не понимаю о чем ты вообще говоришь.",
+      "Про Соню не знаю, ты точно не перепутал чат?",
+      "Соня... не-не, я тут ни при чем.",
+    ],
+    generalQuestionReplies: [
+      'По "{topic}" - сложно, но если не тильтовать, то решаемо.',
+      'Если про "{topic}", то не спеши: шаг, пауза, потом второй шаг.',
+      'На тему "{topic}" скажу так: спокойный темп побеждает хаос.',
+    ],
     outros: [
       "Короче, не тильтуй и делай шагами.",
       "Если спокойно подойти, это решаемо.",
@@ -192,31 +298,29 @@ const personalities = {
 
       if (pureSmallTalk) {
         if (ctx.isHowAreYou) {
-          return "Да так... терпимо. Не в тильте, уже хорошо.";
+          return pickStyleLine("glotalkin", "small_how", this.smallTalkHowAreYou);
         }
-        return "Привет... живу потихоньку. Что хотел?";
+        return pickStyleLine("glotalkin", "small_greet", this.smallTalkGreeting);
       }
 
       lines.push(pickStyleLine("glotalkin", "intro", this.intros));
 
       if (ctx.isGreeting && ctx.wordCount > 3) {
-        lines.push("Да привет... живу на минималках.");
+        lines.push(pickStyleLine("glotalkin", "greet", this.smallTalkGreeting));
       }
 
       if (ctx.isHowAreYou) {
-        lines.push("Чувствую себя как саппорт без вижена. Но терпимо.");
+        lines.push(pickStyleLine("glotalkin", "how", this.howAreYouReplies));
       }
 
       if (ctx.hasDota) {
-        lines.push(
-          "В доте всё просто: ты либо жмешь кнопки вовремя, либо смотришь на трон."
-        );
+        lines.push(pickStyleLine("glotalkin", "dota", this.dotaReplies));
       } else {
-        lines.push("Я бы сейчас лучше патчноуты почитал, чем в реальность возвращался.");
+        lines.push(pickStyleLine("glotalkin", "non_dota", this.nonDotaReplies));
       }
 
       if (ctx.hasSonya) {
-        lines.push("Соня? Не, не понимаю о чем ты вообще говоришь.");
+        lines.push(pickStyleLine("glotalkin", "sonya", this.sonyaReplies));
       }
 
       if (Math.random() < 0.25 && !ctx.isHowAreYou) {
@@ -228,7 +332,12 @@ const personalities = {
       }
 
       if (ctx.isQuestion && !ctx.hasDota) {
-        lines.push(`По "${ctx.topic}" - сложно, но если не тильтовать, то решаемо.`);
+        lines.push(
+          fillTopic(
+            pickStyleLine("glotalkin", "question", this.generalQuestionReplies),
+            ctx.topic
+          )
+        );
       }
 
       if (!ctx.isHowAreYou || ctx.wordCount > 5) {
@@ -337,6 +446,10 @@ function pickStyleLine(characterKey, channel, list) {
 
   memory[channel] = candidate;
   return candidate;
+}
+
+function fillTopic(template, topic) {
+  return template.replace("{topic}", topic);
 }
 
 function analyzeUserText(userText) {
