@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VOZDUKHAN SIMULATOR</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rubik+Glitch&family=Rubik:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <h1>VOZDUKHAN SIMULATOR</h1>
+        <p>Русскоязычный чат с персонажами</p>
+      </header>
+
+      <section class="character-panel">
+        <label for="characterSelect">Выбери персонажа</label>
+        <select id="characterSelect"></select>
+        <p id="characterHint"></p>
+      </section>
+
+      <section id="chatWindow" class="chat-window" aria-live="polite"></section>
+
+      <form id="chatForm" class="chat-form">
+        <input
+          id="messageInput"
+          type="text"
+          placeholder="Напиши сообщение..."
+          autocomplete="off"
+          required
+        />
+        <button type="submit">Отправить</button>
+      </form>
+    </main>
+    <script src="./app.js"></script>
+  </body>
+</html>
