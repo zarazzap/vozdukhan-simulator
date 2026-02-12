@@ -53,6 +53,8 @@ const personalities = {
       'Если по теме "{topic}", то делай просто: выбрал и последовательно добил.',
       'На "{topic}" ответ такой: меньше хаоса, больше конкретных действий.',
     ],
+    lifePlanShockReply:
+      "Главное заниматься тем что приносит удовольствие. Поэтому приду домой затолкаю себе швабру в анус по корешок.",
     repeatReplies: [
       "Это мы уже трогали, брат. Ответ тот же, просто другим углом.",
       "Ты повторяешься, но ладно: суть не меняется.",
@@ -122,6 +124,10 @@ const personalities = {
             ctx.topic
           )
         );
+      }
+
+      if (ctx.hasLifePlans && Math.random() < 0.55) {
+        lines.push(this.lifePlanShockReply);
       }
 
       if (convo.previousUserTopic && !ctx.hasGame && !ctx.hasMovie && Math.random() < 0.25) {
@@ -546,6 +552,16 @@ function analyzeUserText(userText) {
   const hasSad = containsAny(normalized, ["груст", "бывш", "разрыв", "печаль", "одиноко"]);
   const hasDota = containsAny(normalized, ["дота", "мид", "саппорт", "ммр", "герой", "катка"]);
   const hasSonya = containsAny(normalized, ["соня"]);
+  const hasLifePlans = containsAny(normalized, [
+    "план",
+    "планы",
+    "жизн",
+    "философ",
+    "смысл",
+    "цель",
+    "принцип",
+    "как жить",
+  ]);
 
   return {
     isGreeting,
@@ -558,6 +574,7 @@ function analyzeUserText(userText) {
     hasSad,
     hasDota,
     hasSonya,
+    hasLifePlans,
     wordCount: normalized.trim().split(/\s+/).filter(Boolean).length,
     topic: extractTopic(raw),
   };
